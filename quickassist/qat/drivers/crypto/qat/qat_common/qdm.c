@@ -70,6 +70,16 @@ int qdm_attach_device(struct device *dev)
 		return -ENODEV;
 	}
 
+#if KERNEL_VERSION(6, 13, 0) <= LINUX_VERSION_CODE
+	if (!domain && qdm_iommu_present() && !iommu_under_pt()) {
+		domain = iommu_paging_domain_alloc(dev);
+		if (!domain) {
+			pr_err("QAT: Failed to allocate a domain\n");
+			return -ENOMEM;
+		}
+	}
+#endif
+
 	if (!domain) {
 		if (iommu_under_pt()) {
 			dma_addr_t daddr;
@@ -204,8 +214,10 @@ int __init qdm_init(void)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0)
 	domain = iommu_domain_alloc();
-#else
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 13, 0)
 	domain = iommu_domain_alloc(&pci_bus_type);
+#else
+	return 0;
 #endif
 	if (!domain) {
 		pr_err("QAT: Failed to allocate a domain\n");
