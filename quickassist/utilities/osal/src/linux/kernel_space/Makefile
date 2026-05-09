@@ -119,6 +119,7 @@ endif
 
 #include your $(ICP_OS)_$(ICP_OS_LEVEL).mk file
 include $(ICP_ENV_DIR)/$(ICP_OS)_$(ICP_OS_LEVEL).mk
+ccflags-y += $(EXTRA_CFLAGS)
 
 ifneq ($(MACHINE), x86_64)
 ASM_SOURCES+= OsalAtomicAddSub.S
