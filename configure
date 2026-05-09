@@ -9099,7 +9099,10 @@ fi
 
 # SYSTEMD_USAGE
 if test -e /usr/bin/systemctl; then
-    SYSTEMD_SYSTEM_UNIT_DIR=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)
+    SYSTEMD_SYSTEM_UNIT_DIR=$($PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null)
+    if test -z "$SYSTEMD_SYSTEM_UNIT_DIR"; then
+        SYSTEMD_SYSTEM_UNIT_DIR=/etc/systemd/system
+    fi
 
 fi
 

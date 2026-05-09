@@ -1615,8 +1615,10 @@ qat-service-install:
 			rmmod usdm_drv;														\
 		fi;																\
 		if [ -e /usr/bin/systemctl ]; then												\
-			$(INSTALL) -D -m 644 $(SYSTEMD_UNIT_FILE_PATH)/$(SYSTEMD_UNIT_FILE) $(SYSTEMD_SYSTEM_UNIT_DIR)/$(SYSTEMD_UNIT_FILE);	\
-			$(LN_S) $(SYSTEMD_UNIT_FILE_PATH)/$(SYSTEMD_UNIT_FILE) $(SYSTEMD_SYSTEM_UNIT_DIR)/qat_service.service;			\
+			systemd_unit_dir="$(SYSTEMD_SYSTEM_UNIT_DIR)";										\
+			if [ -z "$$systemd_unit_dir" ]; then systemd_unit_dir=/etc/systemd/system; fi;						\
+			$(INSTALL) -D -m 644 $(SYSTEMD_UNIT_FILE_PATH)/$(SYSTEMD_UNIT_FILE) $$systemd_unit_dir/$(SYSTEMD_UNIT_FILE);		\
+			$(LN_S) -f $$systemd_unit_dir/$(SYSTEMD_UNIT_FILE) $$systemd_unit_dir/qat_service.service;				\
 			systemctl enable qat;													\
 			systemctl daemon-reload;												\
 		elif [ -e /sbin/chkconfig ] ; then												\
