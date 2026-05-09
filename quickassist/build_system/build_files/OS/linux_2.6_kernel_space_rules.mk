@@ -61,6 +61,7 @@
 KERNEL_RELEASE ?= $(shell cat $(KERNEL_SOURCE_ROOT)/include/config/kernel.release)
 KERNELVERSION := $(shell echo $(KERNEL_RELEASE) | cut -d'.' -f1,2)
 
+ccflags-y += $(EXTRA_CFLAGS)
 obj-m+=$(OUTPUT_NAME).o
 $(OUTPUT_NAME)-objs := $(patsubst %.c,%.o, $(MODULE_SOURCES)) $(ADDITIONAL_KERNEL_LIBS)
 
