@@ -1,0 +1,3 @@
+[submodule "openzfs"]
+	path = openzfs
+	url = https://github.com/drew442/zfs.git
