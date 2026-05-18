@@ -1,0 +1,46 @@
+#!/bin/sh
+set -eu
+
+kernel_source_dir="${1:-${kernel_source_dir:-}}"
+kernelver="${2:-${kernelver:-$(uname -r)}}"
+
+if [ -z "$kernel_source_dir" ]; then
+	kernel_source_dir="/lib/modules/$kernelver/build"
+fi
+
+if [ ! -d "$kernel_source_dir" ]; then
+	echo "QAT DKMS: kernel source directory not found: $kernel_source_dir" >&2
+	exit 1
+fi
+
+configure_flags="${QAT_DKMS_CONFIGURE_FLAGS:---enable-kapi --enable-qat-lkcf}"
+build_output="${QAT_DKMS_BUILD_OUTPUT:-$PWD/build}"
+
+echo "QAT DKMS: configuring against kernel source $kernel_source_dir"
+# shellcheck disable=SC2086
+./configure $configure_flags \
+	ICP_ROOT="$PWD" \
+	ICP_BUILD_OUTPUT="$build_output" \
+	KERNEL_SOURCE_ROOT="$kernel_source_dir"
+
+echo "QAT DKMS: building kernel API and QAT 1.x modules"
+make \
+	ICP_ROOT="$PWD" \
+	ICP_BUILD_OUTPUT="$build_output" \
+	KERNEL_SOURCE_ROOT="$kernel_source_dir" \
+	qat-driver-all quickassist-all
+
+for module in \
+	intel_qat \
+	qat_api \
+	usdm_drv \
+	qat_dh895xcc \
+	qat_c62x \
+	qat_dh895xccvf \
+	qat_c62xvf
+do
+	if [ ! -r "$build_output/$module.ko" ]; then
+		echo "QAT DKMS: expected module missing: $build_output/$module.ko" >&2
+		exit 1
+	fi
+done
