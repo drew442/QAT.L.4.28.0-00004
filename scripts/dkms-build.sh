@@ -44,3 +44,20 @@ do
 		exit 1
 	fi
 done
+
+artifact_root="${QAT_DKMS_ARTIFACT_ROOT:-/usr/src/qat-4.28.0-00004}"
+if [ "$artifact_root" != "$PWD" ]; then
+	rm -rf "$artifact_root/build"
+	mkdir -p "$artifact_root/build"
+	cp -a "$build_output/." "$artifact_root/build/"
+
+	for symvers in \
+		quickassist/lookaside/access_layer/src/Module.symvers \
+		quickassist/qat/Module.symvers
+	do
+		if [ -r "$PWD/$symvers" ]; then
+			mkdir -p "$artifact_root/$(dirname "$symvers")"
+			cp -a "$PWD/$symvers" "$artifact_root/$symvers"
+		fi
+	done
+fi

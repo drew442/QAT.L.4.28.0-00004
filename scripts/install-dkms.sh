@@ -59,22 +59,6 @@ tar \
 
 dkms add -m "$package_name" -v "$package_version"
 dkms build -m "$package_name" -v "$package_version"
-
-dkms_build_dir="/var/lib/dkms/$package_name/$package_version/build"
-rm -rf "$source_dir/build"
-mkdir -p "$source_dir/build"
-cp -a "$dkms_build_dir/build/." "$source_dir/build/"
-
-for symvers in \
-	quickassist/lookaside/access_layer/src/Module.symvers \
-	quickassist/qat/Module.symvers
-do
-	if [ -r "$dkms_build_dir/$symvers" ]; then
-		mkdir -p "$source_dir/$(dirname "$symvers")"
-		cp -a "$dkms_build_dir/$symvers" "$source_dir/$symvers"
-	fi
-done
-
 dkms install --force -m "$package_name" -v "$package_version"
 
 shadow_root="/lib/modules/$kernelver/updates/drivers/crypto/qat"
