@@ -109,7 +109,7 @@ OUTPUT_DIR = $(BUILD_DIR)/$(SRC_DIR)
 OUTPUT_BIN = $(OUTPUT_DIR)/$(OUTPUT_NAME)
 DEPLOY_BIN = $(ADF_CTL_ROOT)/$(OUTPUT_NAME)
 
-SRCS = $(shell find . -iname "*.cpp")
+SRCS = $(shell find . -path "*/PaxHeaders.*" -prune -o -iname "*.cpp" -print)
 OBJS = $(foreach file,$(subst $(SRC_DIR)/,,$(SRCS:.cpp=.o)),$(OUTPUT_DIR)/$(file))
 DEPS = $(OBJS:.o=.d)
 DEPS_CXXFLAGS = -MMD -MP

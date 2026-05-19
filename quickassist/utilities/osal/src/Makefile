@@ -119,6 +119,7 @@ kernel_module:lib_kernel
 	$(RM) -rf *.mod.* .*.cmd;
 
 obj-m := $(OUTPUT_NAME).o
+ccflags-y += $(EXTRA_CFLAGS)
 $(OUTPUT_NAME)-objs := $(ADDITIONAL_KERNEL_LIBS) $(QATAL_LIBS)\
 		$(patsubst %.c,%.o, $(MODULE_SOURCES))
 
@@ -173,4 +174,3 @@ osal_clean:
 		(test -e $$dir) && (echo ; echo $$dir :; cd $$dir; \
 		($(MAKE) clean) || return 1) \
 	done
-

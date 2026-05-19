@@ -176,6 +176,7 @@ LAC-kernel_module:lib_kernel
 	$(RM) -rf *.mod.o* .*.cmd;
 
 obj-m := $(OUTPUT_NAME).o
+ccflags-y += $(EXTRA_CFLAGS)
 $(OUTPUT_NAME)-objs := $(patsubst %.c,%.o, $(MODULE_SOURCES))
 lib-kernel := $(ADDITIONAL_OBJECTS) $(ADDITIONAL_KERNEL_LIBS)
 static-lib-paths := $(patsubst %,-L$(LAC_DIR)/src/%, $(dir $(lib-kernel)))

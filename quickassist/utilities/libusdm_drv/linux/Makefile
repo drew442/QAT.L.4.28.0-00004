@@ -188,7 +188,8 @@ export OUTPUT_NAME
 #kernel space rules here 
 #produce two artefacts: module and static library and copy them
 ifeq ($(OS),linux)
-EXTRA_CFLAGS+=-I$(INCLUDES) -Werror -ftree-ter
+EXTRA_CFLAGS += $(INCLUDES) -Werror -ftree-ter
+ccflags-y += $(EXTRA_CFLAGS)
 obj-m+=$(OUTPUT_NAME).o
 $(OUTPUT_NAME)-objs :=$(patsubst %.c,%.o, $(MODULE_SOURCES)) $(ADDITIONAL_KERNEL_LIBS)
 lib-m := $(patsubst %.c,%.o, $(SOURCES)) $(patsubst %.S,%.o, $(ASM_SOURCES))

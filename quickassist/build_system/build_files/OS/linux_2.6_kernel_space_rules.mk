@@ -10,8 +10,8 @@
 #   it under the terms of version 2 of the GNU General Public License as
 #   published by the Free Software Foundation.
 # 
-#   This program is distributed in the hope that it will be useful, but
-#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 #   General Public License for more details.
 # 
@@ -61,6 +61,10 @@
 KERNEL_RELEASE ?= $(shell cat $(KERNEL_SOURCE_ROOT)/include/config/kernel.release)
 KERNELVERSION := $(shell echo $(KERNEL_RELEASE) | cut -d'.' -f1,2)
 
+# These objects are first archived with KBUILD_BUILTIN=1, then linked into
+# external QAT modules. Keep module-only kernel helpers on their module-safe
+# paths while building the intermediate archives.
+ccflags-y += -DMODULE $(EXTRA_CFLAGS)
 obj-m+=$(OUTPUT_NAME).o
 $(OUTPUT_NAME)-objs := $(patsubst %.c,%.o, $(MODULE_SOURCES)) $(ADDITIONAL_KERNEL_LIBS)
 
@@ -117,6 +121,4 @@ $(LIB_SHARED):
 
 $(EXECUTABLE):
 	@echo Error: $@: You cannot build executables in kernel space;
-
-
 

@@ -114,6 +114,7 @@ INCLUDES+=-I$(LAC_DIR)/src/common/include \
 
 #include your $(ICP_OS)_$(ICP_OS_LEVEL).mk file
 include $(ICP_ENV_DIR)/$(ICP_OS)_$(ICP_OS_LEVEL).mk
+ccflags-y += $(EXTRA_CFLAGS)
 
 # On the line directly below list the outputs you wish to build for
 install: lib_static
