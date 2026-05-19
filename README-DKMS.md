@@ -29,6 +29,16 @@ Optional environment overrides:
 - `QAT_DKMS_SOURCE_DIR`: source directory copied into DKMS. Defaults to `/usr/src/qat-4.28.0-00004`.
 - `QAT_DKMS_CONFIGURE_FLAGS`: configure flags used during DKMS builds. Defaults to `--enable-kapi --enable-qat-lkcf`.
 - `QAT_DKMS_BUILD_OUTPUT`: build output directory. Defaults to `<source>/build`.
+- `QAT_DKMS_REQUIRE_RUNTIME_TOOLS`: set to `0` to skip runtime checks for `adf_ctl` and active `/etc` QAT config files. Defaults to `1`.
+- `QAT_DKMS_PREFLIGHT_ONLY`: set to `1` to run installer preflight checks and exit before changing DKMS state. Defaults to `0`.
+
+The installer preflights build tools, kernel headers, QAT service source files, `adf_ctl` source files, and dh895xcc/C62x config templates before registering the DKMS package. By default it also checks that the host has `adf_ctl` in `PATH` and at least one active `/etc/dh895xcc_dev*.conf` or `/etc/c6xx_dev*.conf` runtime config file.
+
+To validate installer prerequisites without rebuilding:
+
+```sh
+sudo QAT_DKMS_PREFLIGHT_ONLY=1 ./scripts/install-dkms.sh
+```
 
 The installer intentionally excludes generated top-level configure output, generated build output, and the nested `openzfs` helper submodule from the DKMS source copy. Source `Makefile` files under `quickassist/` are retained because the QAT driver build requires them.
 
