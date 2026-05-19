@@ -34,6 +34,8 @@ The installer intentionally excludes generated top-level configure output, gener
 
 The installer uses `dkms install --force` so the DKMS-built `qat_api.ko` and `usdm_drv.ko` replace same-version modules that may already exist under the kernel module tree from an earlier manual QAT install.
 
+If older manual QAT modules under `/lib/modules/$(uname -r)/updates/drivers/crypto/qat` would shadow `/updates/dkms`, the installer archives them under `/lib/modules/$(uname -r)/updates/qat-dkms-shadowed-*`, runs `depmod`, and verifies every managed module resolves to `/updates/dkms`.
+
 ## OpenZFS lock-step build
 
 The OpenZFS fork expects ZFS DKMS builds to use the same QAT source tree by default:
