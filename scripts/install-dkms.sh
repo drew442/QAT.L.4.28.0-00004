@@ -64,6 +64,13 @@ dkms install --force -m "$package_name" -v "$package_version"
 shadow_root="/lib/modules/$kernelver/updates/drivers/crypto/qat"
 archive_root="/var/backups/qat-dkms-shadowed-$kernelver-$(date -u +%Y%m%dT%H%M%SZ)"
 
+for old_archive in /lib/modules/"$kernelver"/updates/qat-dkms-shadowed-*; do
+	if [ -e "$old_archive" ]; then
+		mkdir -p "$archive_root/legacy-updates-archive"
+		mv "$old_archive" "$archive_root/legacy-updates-archive/"
+	fi
+done
+
 for module in $module_names; do
 	case "$module" in
 		intel_qat)
