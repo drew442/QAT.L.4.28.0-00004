@@ -32,6 +32,8 @@ Optional environment overrides:
 
 The installer intentionally excludes generated top-level configure output, generated build output, and the nested `openzfs` helper submodule from the DKMS source copy. Source `Makefile` files under `quickassist/` are retained because the QAT driver build requires them.
 
+The installer uses `dkms install --force` so the DKMS-built `qat_api.ko` and `usdm_drv.ko` replace same-version modules that may already exist under the kernel module tree from an earlier manual QAT install.
+
 ## OpenZFS lock-step build
 
 The OpenZFS fork expects ZFS DKMS builds to use the same QAT source tree by default:

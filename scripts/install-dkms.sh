@@ -57,6 +57,6 @@ tar \
 
 dkms add -m "$package_name" -v "$package_version"
 dkms build -m "$package_name" -v "$package_version"
-dkms install -m "$package_name" -v "$package_version"
+dkms install --force -m "$package_name" -v "$package_version"
 
 echo "QAT DKMS source installed at $source_dir"
