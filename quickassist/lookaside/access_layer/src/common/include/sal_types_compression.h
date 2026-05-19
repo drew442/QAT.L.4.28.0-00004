@@ -186,6 +186,25 @@ typedef struct sal_compression_device_data
     Cpa8U windowSizeMask;
 } sal_compression_device_data_t;
 
+typedef enum qat_dc_timing_stat_s
+{
+    QAT_DC_TIMING_SUBMITS = 0,
+    QAT_DC_TIMING_COMP_SUBMITS,
+    QAT_DC_TIMING_DECOMP_SUBMITS,
+    QAT_DC_TIMING_TX_RETRIES,
+    QAT_DC_TIMING_TX_ERRORS,
+    QAT_DC_TIMING_CALLBACKS,
+    QAT_DC_TIMING_COMP_CALLBACKS,
+    QAT_DC_TIMING_DECOMP_CALLBACKS,
+    QAT_DC_TIMING_CREATE_NS,
+    QAT_DC_TIMING_TRANS_PUT_NS,
+    QAT_DC_TIMING_RESPONSE_WAIT_NS,
+    QAT_DC_TIMING_CALLBACK_PROCESS_NS,
+    QAT_DC_TIMING_USER_CALLBACK_NS,
+    QAT_DC_TIMING_TOTAL_NS,
+    QAT_DC_TIMING_NUM_STATS
+} qat_dc_timing_stat_t;
+
 /**
  *****************************************************************************
  * @ingroup SalCtrl
@@ -205,6 +224,9 @@ typedef struct sal_compression_service_s
 
     /* Pointer to an array of atomic stats for compression */
     OsalAtomic *pCompStatsArr;
+
+    /* Per-instance DC datapath timing counters for QAT/ZFS profiling. */
+    OsalAtomic dcTimingStats[QAT_DC_TIMING_NUM_STATS];
 
     /* Size of the DRAM intermediate buffer in bytes */
     Cpa64U minInterBuffSizeInBytes;

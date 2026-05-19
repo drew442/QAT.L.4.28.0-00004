@@ -114,9 +114,77 @@
 #ifdef ICP_QAT_DBG
 #include "lac_logger_utils.h"
 #endif
+#ifdef KERNEL_SPACE
+#include <linux/ktime.h>
+#endif
 #define DC_COMP_MAX_BUFF_SIZE (1024 * 64)
 
 STATIC OsalAtomic dcErrorCount[MAX_DC_ERROR_TYPE];
+
+STATIC Cpa64U dcTimingNowNs(void)
+{
+#ifdef KERNEL_SPACE
+    return (Cpa64U)ktime_get_ns();
+#else
+    return (Cpa64U)osalTimestampGetNs();
+#endif
+}
+
+STATIC void dcTimingAddDelta(sal_compression_service_t *pService,
+                             qat_dc_timing_stat_t stat,
+                             Cpa64U startNs,
+                             Cpa64U endNs)
+{
+    if (NULL != pService && endNs >= startNs)
+    {
+        QAT_DC_TIMING_STAT_ADD(stat, endNs - startNs, pService);
+    }
+}
+
+STATIC void dcTimingRecordCallback(sal_compression_service_t *pService,
+                                   dc_request_dir_t compDecomp,
+                                   Cpa64U createStartNs,
+                                   Cpa64U sendDoneNs,
+                                   Cpa64U callbackStartNs,
+                                   Cpa64U beforeUserCbNs,
+                                   Cpa64U afterUserCbNs)
+{
+    if (NULL == pService)
+    {
+        return;
+    }
+
+    QAT_DC_TIMING_STAT_INC(QAT_DC_TIMING_CALLBACKS, pService);
+    if (DC_COMPRESSION_REQUEST == compDecomp)
+    {
+        QAT_DC_TIMING_STAT_INC(QAT_DC_TIMING_COMP_CALLBACKS, pService);
+    }
+    else
+    {
+        QAT_DC_TIMING_STAT_INC(QAT_DC_TIMING_DECOMP_CALLBACKS, pService);
+    }
+
+    if (0 != sendDoneNs)
+    {
+        dcTimingAddDelta(pService,
+                         QAT_DC_TIMING_RESPONSE_WAIT_NS,
+                         sendDoneNs,
+                         callbackStartNs);
+    }
+    dcTimingAddDelta(pService,
+                     QAT_DC_TIMING_CALLBACK_PROCESS_NS,
+                     callbackStartNs,
+                     beforeUserCbNs);
+    dcTimingAddDelta(pService,
+                     QAT_DC_TIMING_USER_CALLBACK_NS,
+                     beforeUserCbNs,
+                     afterUserCbNs);
+    if (0 != createStartNs)
+    {
+        dcTimingAddDelta(
+            pService, QAT_DC_TIMING_TOTAL_NS, createStartNs, afterUserCbNs);
+    }
+}
 
 void dcErrorLog(CpaDcReqStatus dcError)
 {
@@ -337,6 +405,11 @@ void dcCompression_ProcessCallback(void *pRespMsg)
     dc_request_dir_t compDecomp = DC_COMPRESSION_REQUEST;
     Cpa8U opStatus = ICP_QAT_FW_COMN_STATUS_FLAG_OK;
     Cpa8U hdrFlags = 0;
+    Cpa64U callbackStartNs = dcTimingNowNs();
+    Cpa64U beforeUserCbNs = 0;
+    Cpa64U afterUserCbNs = 0;
+    Cpa64U createStartNs = 0;
+    Cpa64U sendDoneNs = 0;
     /* Cast response message to compression response message type */
     pCompRespMsg = (icp_qat_fw_comp_resp_t *)pRespMsg;
     LAC_ENSURE_RETURN_VOID(pCompRespMsg, "pCompRespMsg is NULL");
@@ -379,6 +452,8 @@ void dcCompression_ProcessCallback(void *pRespMsg)
         pCbFunc = pCookie->pSessionDesc->pCompressionCb;
         compDecomp = pCookie->compDecomp;
         pOpData = pCookie->pDcOpData;
+        createStartNs = pCookie->qatDcCreateStartNs;
+        sendDoneNs = pCookie->qatDcSendDoneNs;
     }
 
     pService = (sal_compression_service_t *)(pCookie->dcInstance);
@@ -428,10 +503,19 @@ void dcCompression_ProcessCallback(void *pRespMsg)
             Lac_MemPoolEntryFree(pCookie);
             pCookie = NULL;
 
+            beforeUserCbNs = dcTimingNowNs();
             if (NULL != pCbFunc)
             {
                 pCbFunc(callbackTag, status);
             }
+            afterUserCbNs = dcTimingNowNs();
+            dcTimingRecordCallback(pService,
+                                   compDecomp,
+                                   createStartNs,
+                                   sendDoneNs,
+                                   callbackStartNs,
+                                   beforeUserCbNs,
+                                   afterUserCbNs);
         }
         if (DC_COMPRESSION_REQUEST == compDecomp)
         {
@@ -728,10 +812,19 @@ void dcCompression_ProcessCallback(void *pRespMsg)
         Lac_MemPoolEntryFree(pCookie);
         pCookie = NULL;
 
+        beforeUserCbNs = dcTimingNowNs();
         if (NULL != pCbFunc)
         {
             pCbFunc(callbackTag, status);
         }
+        afterUserCbNs = dcTimingNowNs();
+        dcTimingRecordCallback(pService,
+                               compDecomp,
+                               createStartNs,
+                               sendDoneNs,
+                               callbackStartNs,
+                               beforeUserCbNs,
+                               afterUserCbNs);
     }
 }
 
@@ -1519,6 +1612,8 @@ STATIC CpaStatus dcCompDecompData(sal_compression_service_t *pService,
 {
     CpaStatus status = CPA_STATUS_SUCCESS;
     dc_compression_cookie_t *pCookie = NULL;
+    Cpa64U startNs = 0;
+    Cpa64U doneNs = 0;
 
     if ((LacSync_GenWakeupSyncCaller == pSessionDesc->pCompressionCb) &&
         isAsyncMode == CPA_TRUE)
@@ -1603,6 +1698,10 @@ STATIC CpaStatus dcCompDecompData(sal_compression_service_t *pService,
 
     if (CPA_STATUS_SUCCESS == status)
     {
+        pCookie->qatDcCreateStartNs = dcTimingNowNs();
+        pCookie->qatDcCreateDoneNs = 0;
+        pCookie->qatDcSendStartNs = 0;
+        pCookie->qatDcSendDoneNs = 0;
         status = dcCreateRequest(pCookie,
                                  pService,
                                  pSessionDesc,
@@ -1615,6 +1714,14 @@ STATIC CpaStatus dcCompDecompData(sal_compression_service_t *pService,
                                  callbackTag,
                                  compDecomp,
                                  cnvMode);
+        pCookie->qatDcCreateDoneNs = dcTimingNowNs();
+        if (CPA_STATUS_SUCCESS == status)
+        {
+            dcTimingAddDelta(pService,
+                             QAT_DC_TIMING_CREATE_NS,
+                             pCookie->qatDcCreateStartNs,
+                             pCookie->qatDcCreateDoneNs);
+        }
     }
 
     if (CPA_STATUS_SUCCESS == status)
@@ -1624,22 +1731,39 @@ STATIC CpaStatus dcCompDecompData(sal_compression_service_t *pService,
         {
             osalAtomicInc(&(pSessionDesc->pendingStatelessCbCount));
         }
+        startNs = dcTimingNowNs();
+        pCookie->qatDcSendStartNs = startNs;
         status = dcSendRequest(pCookie, pService, pSessionDesc, compDecomp);
+        doneNs = dcTimingNowNs();
+        pCookie->qatDcSendDoneNs = doneNs;
+        dcTimingAddDelta(
+            pService, QAT_DC_TIMING_TRANS_PUT_NS, startNs, doneNs);
     }
 
     if (CPA_STATUS_SUCCESS == status)
     {
+        QAT_DC_TIMING_STAT_INC(QAT_DC_TIMING_SUBMITS, pService);
         if (DC_COMPRESSION_REQUEST == compDecomp)
         {
+            QAT_DC_TIMING_STAT_INC(QAT_DC_TIMING_COMP_SUBMITS, pService);
             COMPRESSION_STAT_INC(numCompRequests, pService);
         }
         else
         {
+            QAT_DC_TIMING_STAT_INC(QAT_DC_TIMING_DECOMP_SUBMITS, pService);
             COMPRESSION_STAT_INC(numDecompRequests, pService);
         }
     }
     else
     {
+        if (CPA_STATUS_RETRY == status)
+        {
+            QAT_DC_TIMING_STAT_INC(QAT_DC_TIMING_TX_RETRIES, pService);
+        }
+        else
+        {
+            QAT_DC_TIMING_STAT_INC(QAT_DC_TIMING_TX_ERRORS, pService);
+        }
         if (DC_COMPRESSION_REQUEST == compDecomp)
         {
             COMPRESSION_STAT_INC(numCompRequestsErrors, pService);

@@ -111,6 +111,20 @@
 #include "icp_qat_fw_comp.h"
 #include "icp_sal_versions.h"
 
+STATIC Cpa64U SalCtrl_DcTimingAvg(sal_compression_service_t *pService,
+                                  qat_dc_timing_stat_t total,
+                                  qat_dc_timing_stat_t count)
+{
+    Cpa64U countValue = QAT_DC_TIMING_STAT_GET(count, pService);
+
+    if (0 == countValue)
+    {
+        return 0;
+    }
+
+    return QAT_DC_TIMING_STAT_GET(total, pService) / countValue;
+}
+
 #ifndef ICP_DC_ONLY
 #include "dc_chain.h"
 #define CHAINING_CAPABILITY_MASK 0x1FFF0000
@@ -172,6 +186,66 @@ STATIC int SalCtrl_CompresionDebug(void *private_data,
         (long long unsigned int)dcStats.numDecompRequestsErrors,
         (long long unsigned int)dcStats.numDecompCompleted,
         (long long unsigned int)dcStats.numDecompCompletedErrors);
+    len += snprintf(
+        data + len,
+        size - len,
+        BORDER " DC timing Submits:              %16llu " BORDER "\n" BORDER
+               " DC timing Comp Submits:         %16llu " BORDER "\n" BORDER
+               " DC timing Decomp Submits:       %16llu " BORDER "\n" BORDER
+               " DC timing Callbacks:            %16llu " BORDER "\n" BORDER
+               " DC timing Comp Callbacks:       %16llu " BORDER "\n" BORDER
+               " DC timing Decomp Callbacks:     %16llu " BORDER "\n" BORDER
+               " DC timing TX Retries:           %16llu " BORDER "\n" BORDER
+               " DC timing TX Errors:            %16llu " BORDER "\n" SEPARATOR,
+        (long long unsigned int)QAT_DC_TIMING_STAT_GET(
+            QAT_DC_TIMING_SUBMITS, pCompressionService),
+        (long long unsigned int)QAT_DC_TIMING_STAT_GET(
+            QAT_DC_TIMING_COMP_SUBMITS, pCompressionService),
+        (long long unsigned int)QAT_DC_TIMING_STAT_GET(
+            QAT_DC_TIMING_DECOMP_SUBMITS, pCompressionService),
+        (long long unsigned int)QAT_DC_TIMING_STAT_GET(
+            QAT_DC_TIMING_CALLBACKS, pCompressionService),
+        (long long unsigned int)QAT_DC_TIMING_STAT_GET(
+            QAT_DC_TIMING_COMP_CALLBACKS, pCompressionService),
+        (long long unsigned int)QAT_DC_TIMING_STAT_GET(
+            QAT_DC_TIMING_DECOMP_CALLBACKS, pCompressionService),
+        (long long unsigned int)QAT_DC_TIMING_STAT_GET(
+            QAT_DC_TIMING_TX_RETRIES, pCompressionService),
+        (long long unsigned int)QAT_DC_TIMING_STAT_GET(
+            QAT_DC_TIMING_TX_ERRORS, pCompressionService));
+    len += snprintf(
+        data + len,
+        size - len,
+        BORDER " DC avg Create ns:               %16llu " BORDER "\n" BORDER
+               " DC avg transPut ns:             %16llu " BORDER "\n" BORDER
+               " DC avg Response Wait ns:        %16llu " BORDER "\n" BORDER
+               " DC avg Callback Process ns:     %16llu " BORDER "\n" BORDER
+               " DC avg User Callback ns:        %16llu " BORDER "\n" BORDER
+               " DC avg Total ns:                %16llu " BORDER "\n" SEPARATOR,
+        (long long unsigned int)SalCtrl_DcTimingAvg(
+            pCompressionService,
+            QAT_DC_TIMING_CREATE_NS,
+            QAT_DC_TIMING_SUBMITS),
+        (long long unsigned int)SalCtrl_DcTimingAvg(
+            pCompressionService,
+            QAT_DC_TIMING_TRANS_PUT_NS,
+            QAT_DC_TIMING_SUBMITS),
+        (long long unsigned int)SalCtrl_DcTimingAvg(
+            pCompressionService,
+            QAT_DC_TIMING_RESPONSE_WAIT_NS,
+            QAT_DC_TIMING_CALLBACKS),
+        (long long unsigned int)SalCtrl_DcTimingAvg(
+            pCompressionService,
+            QAT_DC_TIMING_CALLBACK_PROCESS_NS,
+            QAT_DC_TIMING_CALLBACKS),
+        (long long unsigned int)SalCtrl_DcTimingAvg(
+            pCompressionService,
+            QAT_DC_TIMING_USER_CALLBACK_NS,
+            QAT_DC_TIMING_CALLBACKS),
+        (long long unsigned int)SalCtrl_DcTimingAvg(
+            pCompressionService,
+            QAT_DC_TIMING_TOTAL_NS,
+            QAT_DC_TIMING_CALLBACKS));
     return 0;
 }
 

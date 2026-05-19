@@ -117,6 +117,15 @@
         }                                                                      \
     } while (0)
 
+#define QAT_DC_TIMING_STAT_INC(statistic, pService)                            \
+    osalAtomicInc(&(pService)->dcTimingStats[(statistic)])
+
+#define QAT_DC_TIMING_STAT_ADD(statistic, value, pService)                     \
+    osalAtomicAdd((INT64)(value), &(pService)->dcTimingStats[(statistic)])
+
+#define QAT_DC_TIMING_STAT_GET(statistic, pService)                            \
+    ((Cpa64U)osalAtomicGet(&(pService)->dcTimingStats[(statistic)]))
+
 /**
 *******************************************************************************
 * @ingroup Dc_DataCompression
@@ -162,5 +171,17 @@ void dcStatsFree(sal_compression_service_t *pService);
 *
 *****************************************************************************/
 void dcStatsReset(sal_compression_service_t *pService);
+
+/**
+*******************************************************************************
+* @ingroup Dc_DataCompression
+*      Resets the QAT DC datapath timing stats
+*
+* @param[in] pService          Pointer to a compression service structure
+*
+* @retval None
+*
+*****************************************************************************/
+void dcTimingStatsReset(sal_compression_service_t *pService);
 
 #endif /* DC_STATS_H_ */

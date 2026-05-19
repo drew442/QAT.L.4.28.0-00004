@@ -57,3 +57,15 @@ ICP_ROOT=/usr/src/qat-4.28.0-00004
 ```
 
 Install or rebuild the QAT DKMS package before rebuilding ZFS DKMS so `${ICP_ROOT}/build`, `${ICP_ROOT}/quickassist/include`, and the QAT `Module.symvers` files match the kernel being built.
+
+## DC timing instrumentation
+
+This branch adds per-compression-instance QAT DC timing counters to the existing
+compression debug output. The counters are intended for OpenZFS QAT latency
+profiling and report request construction time, transport enqueue time,
+response-wait time, callback processing time, user callback time, total request
+time, submit counts, callback counts, and TX retry/error counts.
+
+On a running host with QAT stats enabled, read the per-instance compression
+debug files under the QAT debug filesystem and look for `DC timing` and
+`DC avg` lines.

@@ -236,6 +236,14 @@ typedef struct dc_compression_cookie_s
     /**< Callback function defined for the traditional session>*/
     CpaDcChecksum checksumType;
     /**< Type of checksum */
+    Cpa64U qatDcCreateStartNs;
+    /**< Timestamp before request construction for driver-side profiling. */
+    Cpa64U qatDcCreateDoneNs;
+    /**< Timestamp after request construction for driver-side profiling. */
+    Cpa64U qatDcSendStartNs;
+    /**< Timestamp before transport enqueue for driver-side profiling. */
+    Cpa64U qatDcSendDoneNs;
+    /**< Timestamp after transport enqueue for driver-side profiling. */
 
 } dc_compression_cookie_t;
 

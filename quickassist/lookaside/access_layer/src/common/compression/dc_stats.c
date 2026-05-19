@@ -106,6 +106,7 @@ CpaStatus dcStatsInit(sal_compression_service_t *pService)
     if (CPA_STATUS_SUCCESS == status)
     {
         COMPRESSION_STATS_RESET(pService);
+        dcTimingStatsReset(pService);
     }
 
     return status;
@@ -122,6 +123,17 @@ void dcStatsFree(sal_compression_service_t *pService)
 void dcStatsReset(sal_compression_service_t *pService)
 {
     COMPRESSION_STATS_RESET(pService);
+    dcTimingStatsReset(pService);
+}
+
+void dcTimingStatsReset(sal_compression_service_t *pService)
+{
+    int i;
+
+    for (i = 0; i < QAT_DC_TIMING_NUM_STATS; i++)
+    {
+        osalAtomicSet(0, &pService->dcTimingStats[i]);
+    }
 }
 
 CpaStatus cpaDcGetStats(CpaInstanceHandle dcInstance, CpaDcStats *pStatistics)
