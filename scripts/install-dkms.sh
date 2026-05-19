@@ -6,6 +6,10 @@ package_version="4.28.0-00004"
 source_dir="${QAT_DKMS_SOURCE_DIR:-/usr/src/${package_name}-${package_version}}"
 kernelver="$(uname -r)"
 module_names="intel_qat qat_api usdm_drv qat_dh895xcc qat_c62x qat_dh895xccvf qat_c62xvf"
+script_dir="$(unset CDPATH; cd -- "$(dirname -- "$0")" && pwd)"
+package_root="$(unset CDPATH; cd -- "$script_dir/.." && pwd)"
+
+cd "$package_root"
 
 die() {
 	echo "QAT DKMS installer: $*" >&2

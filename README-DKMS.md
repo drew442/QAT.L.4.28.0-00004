@@ -12,7 +12,7 @@ This branch adds initial DKMS packaging for the QAT 4.28 CE driver used by the O
 
 ## Install
 
-Run from the package root:
+Run the installer from the package root or by repository-relative path:
 
 ```sh
 sudo ./scripts/install-dkms.sh
