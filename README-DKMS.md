@@ -30,7 +30,7 @@ Optional environment overrides:
 - `QAT_DKMS_CONFIGURE_FLAGS`: configure flags used during DKMS builds. Defaults to `--enable-kapi --enable-qat-lkcf`.
 - `QAT_DKMS_BUILD_OUTPUT`: build output directory. Defaults to `<source>/build`.
 
-The installer intentionally excludes generated build output and the nested `openzfs` helper submodule from the DKMS source copy.
+The installer intentionally excludes generated top-level configure output, generated build output, and the nested `openzfs` helper submodule from the DKMS source copy. Source `Makefile` files under `quickassist/` are retained because the QAT driver build requires them.
 
 ## OpenZFS lock-step build
 

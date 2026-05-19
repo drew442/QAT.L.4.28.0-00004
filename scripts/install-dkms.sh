@@ -47,7 +47,7 @@ mkdir -p "$source_dir"
 tar \
 	--exclude=.git \
 	--exclude=build \
-	--exclude=Makefile \
+	--exclude=./Makefile \
 	--exclude=config.log \
 	--exclude=config.status \
 	--exclude=openzfs \
