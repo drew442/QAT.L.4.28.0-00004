@@ -60,12 +60,28 @@ Install or rebuild the QAT DKMS package before rebuilding ZFS DKMS so `${ICP_ROO
 
 ## DC timing instrumentation
 
-This branch adds per-compression-instance QAT DC timing counters to the existing
-compression debug output. The counters are intended for OpenZFS QAT latency
+This branch adds QAT DC timing counters for the traditional compression API
+path used by OpenZFS. The counters are intended for OpenZFS QAT latency
 profiling and report request construction time, transport enqueue time,
 response-wait time, callback processing time, user callback time, total request
 time, submit counts, callback counts, and TX retry/error counts.
 
-On a running host with QAT stats enabled, read the per-instance compression
-debug files under the QAT debug filesystem and look for `DC timing` and
-`DC avg` lines.
+The global aggregate read surfaces are:
+
+```sh
+cat /proc/qat_dc_timing
+cat /sys/kernel/debug/qat_api/dc_timing
+```
+
+The output is a two-column `name value` table. Timing values are cumulative
+nanoseconds since `qat_api.ko` loaded; benchmark tooling should read before and
+after a workload and calculate deltas. The same counters are also included in
+the existing per-compression-instance debug output when that legacy QAT debug
+plumbing is available.
+
+On initramfs-booted hosts, update initramfs after replacing the QAT DKMS module
+or the next boot may load the stale `qat_api.ko` from the old initramfs:
+
+```sh
+sudo update-initramfs -u -k "$(uname -r)"
+```

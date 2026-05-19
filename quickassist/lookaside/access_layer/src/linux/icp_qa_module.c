@@ -88,6 +88,8 @@
 
 int adf_module_load(void);
 void adf_module_unload(void);
+int dcTimingDebugfsInit(void);
+void dcTimingDebugfsExit(void);
 struct module *qat_api_module = NULL;
 
 inline int icp_qa_get_module(void)
@@ -102,6 +104,8 @@ inline void icp_qa_put_module(void)
 
 static int __init kapi_mod_init(void)
 {
+    int status;
+
     qat_api_module = THIS_MODULE;
 
     if (osalCryptoInterfaceInit())
@@ -112,11 +116,18 @@ static int __init kapi_mod_init(void)
 
     icpSetProcessName(LAC_KERNEL_PROCESS_NAME);
 
-    return adf_module_load();
+    status = adf_module_load();
+    if (0 != status)
+    {
+        return status;
+    }
+
+    return dcTimingDebugfsInit();
 }
 
 static void __exit kapi_mod_exit(void)
 {
+    dcTimingDebugfsExit();
     adf_module_unload();
     osalCryptoInterfaceExit();
 }

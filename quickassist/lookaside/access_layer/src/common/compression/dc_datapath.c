@@ -1736,12 +1736,12 @@ STATIC CpaStatus dcCompDecompData(sal_compression_service_t *pService,
         status = dcSendRequest(pCookie, pService, pSessionDesc, compDecomp);
         doneNs = dcTimingNowNs();
         pCookie->qatDcSendDoneNs = doneNs;
-        dcTimingAddDelta(
-            pService, QAT_DC_TIMING_TRANS_PUT_NS, startNs, doneNs);
     }
 
     if (CPA_STATUS_SUCCESS == status)
     {
+        dcTimingAddDelta(
+            pService, QAT_DC_TIMING_TRANS_PUT_NS, startNs, doneNs);
         QAT_DC_TIMING_STAT_INC(QAT_DC_TIMING_SUBMITS, pService);
         if (DC_COMPRESSION_REQUEST == compDecomp)
         {

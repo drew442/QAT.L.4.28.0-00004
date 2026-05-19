@@ -96,6 +96,121 @@
 #include "sal_types_compression.h"
 #include "dc_stats.h"
 
+#ifdef KERNEL_SPACE
+#include <linux/debugfs.h>
+#include <linux/err.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/proc_fs.h>
+#include <linux/seq_file.h>
+#include <linux/version.h>
+
+static atomic64_t qatDcTimingGlobalStats[QAT_DC_TIMING_NUM_STATS];
+static struct dentry *qatDcTimingDebugfsDir;
+static struct dentry *qatDcTimingDebugfsFile;
+static struct proc_dir_entry *qatDcTimingProcFile;
+
+static const char *const qatDcTimingStatNames[QAT_DC_TIMING_NUM_STATS] = {
+    [QAT_DC_TIMING_SUBMITS] = "submits",
+    [QAT_DC_TIMING_COMP_SUBMITS] = "comp_submits",
+    [QAT_DC_TIMING_DECOMP_SUBMITS] = "decomp_submits",
+    [QAT_DC_TIMING_CALLBACKS] = "callbacks",
+    [QAT_DC_TIMING_COMP_CALLBACKS] = "comp_callbacks",
+    [QAT_DC_TIMING_DECOMP_CALLBACKS] = "decomp_callbacks",
+    [QAT_DC_TIMING_TX_RETRIES] = "tx_retries",
+    [QAT_DC_TIMING_TX_ERRORS] = "tx_errors",
+    [QAT_DC_TIMING_CREATE_NS] = "create_ns",
+    [QAT_DC_TIMING_TRANS_PUT_NS] = "trans_put_ns",
+    [QAT_DC_TIMING_RESPONSE_WAIT_NS] = "response_wait_ns",
+    [QAT_DC_TIMING_CALLBACK_PROCESS_NS] = "callback_process_ns",
+    [QAT_DC_TIMING_USER_CALLBACK_NS] = "user_callback_ns",
+    [QAT_DC_TIMING_TOTAL_NS] = "total_ns",
+};
+
+static int qatDcTimingDebugfsShow(struct seq_file *seq, void *unused)
+{
+    int i;
+
+    (void)unused;
+
+    for (i = 0; i < QAT_DC_TIMING_NUM_STATS; i++)
+    {
+        seq_printf(seq,
+                   "%s %lld\n",
+                   qatDcTimingStatNames[i],
+                   atomic64_read(&qatDcTimingGlobalStats[i]));
+    }
+
+    return 0;
+}
+
+static int qatDcTimingDebugfsOpen(struct inode *inode, struct file *file)
+{
+    return single_open(file, qatDcTimingDebugfsShow, inode->i_private);
+}
+
+static const struct file_operations qatDcTimingDebugfsOps = {
+    .owner = THIS_MODULE,
+    .open = qatDcTimingDebugfsOpen,
+    .read = seq_read,
+    .llseek = seq_lseek,
+    .release = single_release,
+};
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
+static const struct proc_ops qatDcTimingProcOps = {
+    .proc_open = qatDcTimingDebugfsOpen,
+    .proc_read = seq_read,
+    .proc_lseek = seq_lseek,
+    .proc_release = single_release,
+};
+#else
+static const struct file_operations qatDcTimingProcOps = {
+    .owner = THIS_MODULE,
+    .open = qatDcTimingDebugfsOpen,
+    .read = seq_read,
+    .llseek = seq_lseek,
+    .release = single_release,
+};
+#endif
+
+int dcTimingDebugfsInit(void)
+{
+    qatDcTimingProcFile =
+        proc_create("qat_dc_timing", 0444, NULL, &qatDcTimingProcOps);
+
+    qatDcTimingDebugfsDir = debugfs_create_dir("qat_api", NULL);
+    if (IS_ERR_OR_NULL(qatDcTimingDebugfsDir))
+    {
+        qatDcTimingDebugfsDir = NULL;
+        return 0;
+    }
+
+    qatDcTimingDebugfsFile = debugfs_create_file("dc_timing",
+                                                 0444,
+                                                 qatDcTimingDebugfsDir,
+                                                 NULL,
+                                                 &qatDcTimingDebugfsOps);
+    if (IS_ERR_OR_NULL(qatDcTimingDebugfsFile))
+    {
+        debugfs_remove_recursive(qatDcTimingDebugfsDir);
+        qatDcTimingDebugfsDir = NULL;
+        qatDcTimingDebugfsFile = NULL;
+    }
+
+    return 0;
+}
+
+void dcTimingDebugfsExit(void)
+{
+    debugfs_remove_recursive(qatDcTimingDebugfsDir);
+    proc_remove(qatDcTimingProcFile);
+    qatDcTimingDebugfsDir = NULL;
+    qatDcTimingDebugfsFile = NULL;
+    qatDcTimingProcFile = NULL;
+}
+#endif
+
 CpaStatus dcStatsInit(sal_compression_service_t *pService)
 {
     CpaStatus status = CPA_STATUS_SUCCESS;
@@ -134,6 +249,25 @@ void dcTimingStatsReset(sal_compression_service_t *pService)
     {
         osalAtomicSet(0, &pService->dcTimingStats[i]);
     }
+}
+
+void dcTimingStatInc(qat_dc_timing_stat_t statistic,
+                     sal_compression_service_t *pService)
+{
+    osalAtomicInc(&pService->dcTimingStats[statistic]);
+#ifdef KERNEL_SPACE
+    atomic64_inc(&qatDcTimingGlobalStats[statistic]);
+#endif
+}
+
+void dcTimingStatAdd(qat_dc_timing_stat_t statistic,
+                     Cpa64U value,
+                     sal_compression_service_t *pService)
+{
+    osalAtomicAdd((INT64)value, &pService->dcTimingStats[statistic]);
+#ifdef KERNEL_SPACE
+    atomic64_add((s64)value, &qatDcTimingGlobalStats[statistic]);
+#endif
 }
 
 CpaStatus cpaDcGetStats(CpaInstanceHandle dcInstance, CpaDcStats *pStatistics)

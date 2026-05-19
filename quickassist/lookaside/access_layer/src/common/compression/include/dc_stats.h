@@ -118,10 +118,10 @@
     } while (0)
 
 #define QAT_DC_TIMING_STAT_INC(statistic, pService)                            \
-    osalAtomicInc(&(pService)->dcTimingStats[(statistic)])
+    dcTimingStatInc((statistic), (pService))
 
 #define QAT_DC_TIMING_STAT_ADD(statistic, value, pService)                     \
-    osalAtomicAdd((INT64)(value), &(pService)->dcTimingStats[(statistic)])
+    dcTimingStatAdd((statistic), (value), (pService))
 
 #define QAT_DC_TIMING_STAT_GET(statistic, pService)                            \
     ((Cpa64U)osalAtomicGet(&(pService)->dcTimingStats[(statistic)]))
@@ -183,5 +183,57 @@ void dcStatsReset(sal_compression_service_t *pService);
 *
 *****************************************************************************/
 void dcTimingStatsReset(sal_compression_service_t *pService);
+
+/**
+*******************************************************************************
+* @ingroup Dc_DataCompression
+*      Increments a QAT DC datapath timing statistic
+*
+* @param[in] statistic         Statistic to increment
+* @param[in] pService          Pointer to a compression service structure
+*
+* @retval None
+*
+*****************************************************************************/
+void dcTimingStatInc(qat_dc_timing_stat_t statistic,
+                     sal_compression_service_t *pService);
+
+/**
+*******************************************************************************
+* @ingroup Dc_DataCompression
+*      Adds a value to a QAT DC datapath timing statistic
+*
+* @param[in] statistic         Statistic to update
+* @param[in] value             Value to add
+* @param[in] pService          Pointer to a compression service structure
+*
+* @retval None
+*
+*****************************************************************************/
+void dcTimingStatAdd(qat_dc_timing_stat_t statistic,
+                     Cpa64U value,
+                     sal_compression_service_t *pService);
+
+#ifdef KERNEL_SPACE
+/**
+*******************************************************************************
+* @ingroup Dc_DataCompression
+*      Creates the kernel debugfs read surface for global QAT DC timings
+*
+* @retval 0                   debugfs setup complete or unavailable
+*
+*****************************************************************************/
+int dcTimingDebugfsInit(void);
+
+/**
+*******************************************************************************
+* @ingroup Dc_DataCompression
+*      Removes the kernel debugfs read surface for global QAT DC timings
+*
+* @retval None
+*
+*****************************************************************************/
+void dcTimingDebugfsExit(void);
+#endif
 
 #endif /* DC_STATS_H_ */
