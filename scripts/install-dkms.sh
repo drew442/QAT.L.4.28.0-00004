@@ -59,7 +59,6 @@ tar \
 
 dkms add -m "$package_name" -v "$package_version"
 dkms build -m "$package_name" -v "$package_version"
-dkms install --force -m "$package_name" -v "$package_version"
 
 dkms_build_dir="/var/lib/dkms/$package_name/$package_version/build"
 rm -rf "$source_dir/build"
@@ -75,6 +74,8 @@ do
 		cp -a "$dkms_build_dir/$symvers" "$source_dir/$symvers"
 	fi
 done
+
+dkms install --force -m "$package_name" -v "$package_version"
 
 shadow_root="/lib/modules/$kernelver/updates/drivers/crypto/qat"
 archive_root="/var/backups/qat-dkms-shadowed-$kernelver-$(date -u +%Y%m%dT%H%M%SZ)"
