@@ -50,6 +50,7 @@ tar \
 	--exclude=Makefile \
 	--exclude=config.log \
 	--exclude=config.status \
+	--exclude=openzfs \
 	--exclude='*.ko' \
 	--exclude='*.o' \
 	-cf - . | tar -C "$source_dir" -xf -
