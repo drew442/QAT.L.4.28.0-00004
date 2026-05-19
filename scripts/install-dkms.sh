@@ -62,7 +62,7 @@ dkms build -m "$package_name" -v "$package_version"
 dkms install --force -m "$package_name" -v "$package_version"
 
 shadow_root="/lib/modules/$kernelver/updates/drivers/crypto/qat"
-archive_root="/lib/modules/$kernelver/updates/qat-dkms-shadowed-$(date -u +%Y%m%dT%H%M%SZ)"
+archive_root="/var/backups/qat-dkms-shadowed-$kernelver-$(date -u +%Y%m%dT%H%M%SZ)"
 
 for module in $module_names; do
 	case "$module" in
