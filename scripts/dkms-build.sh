@@ -18,7 +18,7 @@ build_output="${QAT_DKMS_BUILD_OUTPUT:-$PWD/build}"
 
 echo "QAT DKMS: configuring against kernel source $kernel_source_dir"
 # shellcheck disable=SC2086
-./configure $configure_flags \
+sh ./configure $configure_flags \
 	ICP_ROOT="$PWD" \
 	ICP_BUILD_OUTPUT="$build_output" \
 	KERNEL_SOURCE_ROOT="$kernel_source_dir"
