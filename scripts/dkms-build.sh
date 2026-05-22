@@ -18,7 +18,11 @@ build_output="${QAT_DKMS_BUILD_OUTPUT:-$PWD/build}"
 param_check="${QAT_DKMS_PARAM_CHECK:-y}"
 
 case "$param_check" in
-	y|n)
+	y)
+		configure_param_check="yes"
+		;;
+	n)
+		configure_param_check="no"
 		;;
 	*)
 		echo "QAT DKMS: QAT_DKMS_PARAM_CHECK must be y or n" >&2
@@ -30,7 +34,7 @@ case "$configure_flags" in
 	*--enable-param-check*)
 		;;
 	*)
-		configure_flags="$configure_flags --enable-param-check=$param_check"
+		configure_flags="$configure_flags --enable-param-check=$configure_param_check"
 		;;
 esac
 
