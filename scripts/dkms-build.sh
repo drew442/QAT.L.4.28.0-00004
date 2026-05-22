@@ -15,6 +15,24 @@ fi
 
 configure_flags="${QAT_DKMS_CONFIGURE_FLAGS:---enable-kapi --enable-qat-lkcf}"
 build_output="${QAT_DKMS_BUILD_OUTPUT:-$PWD/build}"
+param_check="${QAT_DKMS_PARAM_CHECK:-y}"
+
+case "$param_check" in
+	y|n)
+		;;
+	*)
+		echo "QAT DKMS: QAT_DKMS_PARAM_CHECK must be y or n" >&2
+		exit 1
+		;;
+esac
+
+case "$configure_flags" in
+	*--enable-param-check*)
+		;;
+	*)
+		configure_flags="$configure_flags --enable-param-check=$param_check"
+		;;
+esac
 
 echo "QAT DKMS: configuring against kernel source $kernel_source_dir"
 # shellcheck disable=SC2086
@@ -27,6 +45,7 @@ echo "QAT DKMS: building kernel API and QAT 1.x modules"
 make \
 	ICP_ROOT="$PWD" \
 	ICP_BUILD_OUTPUT="$build_output" \
+	ICP_PARAM_CHECK="$param_check" \
 	KERNEL_SOURCE_ROOT="$kernel_source_dir" \
 	qat-driver-all quickassist-all
 

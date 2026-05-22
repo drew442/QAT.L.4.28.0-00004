@@ -29,6 +29,16 @@ require_dir() {
 	[ -d "$1" ] || die "missing required directory: $1"
 }
 
+validate_param_check() {
+	case "${QAT_DKMS_PARAM_CHECK:-y}" in
+		y|n)
+			;;
+		*)
+			die "QAT_DKMS_PARAM_CHECK must be y or n"
+			;;
+	esac
+}
+
 preflight() {
 	[ "$(id -u)" -eq 0 ] || die "must be run as root"
 
@@ -63,6 +73,7 @@ preflight() {
 	fi
 }
 
+validate_param_check
 preflight
 
 if [ "${QAT_DKMS_PREFLIGHT_ONLY:-0}" = "1" ]; then
@@ -102,6 +113,12 @@ tar \
 	--exclude='*.ko' \
 	--exclude='*.o' \
 	-cf - . | tar -C "$source_dir" -xf -
+
+if [ "${QAT_DKMS_PARAM_CHECK:-y}" != "y" ]; then
+	sed -i \
+		"s#^MAKE\\[0\\]=\"\\(.*\\)\"#MAKE[0]=\"QAT_DKMS_PARAM_CHECK=${QAT_DKMS_PARAM_CHECK} \\1\"#" \
+		"$source_dir/dkms.conf"
+fi
 
 dkms add -m "$package_name" -v "$package_version"
 dkms build -m "$package_name" -v "$package_version"
